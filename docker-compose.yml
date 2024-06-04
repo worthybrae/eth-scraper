@@ -1,47 +1,20 @@
-version: "3.8"
+version: "3"
 
 services:
-  # Spark Master
-  spark-master:
-    image: apache/spark:latest
-    ports:
-      - "7077:7077" # Spark Master UI
-      - "8080:8080" # Spark Master web UI (optional)
-    environment:
-      - MASTER=spark://spark-master:7077
-    volumes:
-      - spark-master-data:/opt/spark/master
-
-  # Spark Worker(s)
-  spark-worker:
-    image: apache/spark:latest
-    depends_on:
-      - spark-master
-    ports:
-      - "8081:8081" # Spark Worker UI (optional)
-    environment:
-      - MASTER=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=1g  # Adjust memory as needed
-      - SPARK_WORKER_CORES=1     # Adjust cores as needed
-    volumes:
-      - spark-worker-data:/opt/spark/worker
-
-  # Airflow
   airflow:
-    image: airflow/stable
-    depends_on:
-      - spark-master  # Adjust if Airflow needs Spark connection
-    ports:
-      - "8080:8080" # Airflow web server
+    build: 
+      context: ./Airflow
     environment:
-      # Add Airflow connection details for Spark if needed
+      - LOAD_EX=n
+      - EXECUTOR=LocalExecutor
     volumes:
-      - airflow-dags:/opt/airflow/dags  # Persist DAGs
-      - airflow-logs:/opt/airflow/logs  # Persist logs
+      - ./airflow/dags:/opt/airflow/dags
+    ports:
+      - "8080:8080" 
+    command: webserver
 
-# Volumes (Optional, adjust mount paths if needed)
-volumes:
-  spark-master-data:
-  spark-worker-data:
-  airflow-dags:
-  airflow-logs:
+  spark:
+    build:
+      context: ./spark
+    volumes:
+      -./spark/app:/app
