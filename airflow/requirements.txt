@@ -1,3 +1,4 @@
 web3
 pyspark
 python-dotenv
+apache-airflow

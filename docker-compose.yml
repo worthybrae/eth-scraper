@@ -18,3 +18,8 @@ services:
       context: ./spark
     volumes:
       - ./spark/app:/app
+    ports:
+      - "4040:4040"
+    deploy:
+      restart_policy:
+        condition: any
