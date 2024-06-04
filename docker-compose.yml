@@ -3,7 +3,7 @@ version: "3"
 services:
   airflow:
     build: 
-      context: ./Airflow
+      context: ./airflow
     environment:
       - LOAD_EX=n
       - EXECUTOR=LocalExecutor
@@ -17,4 +17,4 @@ services:
     build:
       context: ./spark
     volumes:
-      -./spark/app:/app
+      - ./spark/app:/app
