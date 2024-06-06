@@ -1,17 +1,57 @@
 version: "3"
 
 services:
-  airflow:
-    build: 
-      context: ./airflow
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+
+  airflow-webserver:
+    build:
+      context: ./scheduler
+    container_name: airflow-webserver
     environment:
       - LOAD_EX=n
       - EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=3I-MgvR9Xf8RlHU5E5kQtq_Q5e8N05w-3DUFDDGAtpY=
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW_UID=${AIRFLOW_UID}
     volumes:
-      - ./airflow/dags:/opt/airflow/dags
+      - ./scheduler/dags:/opt/airflow/dags
+      - ./scheduler/logs:/opt/airflow/logs
+      - ./scheduler/plugins:/opt/airflow/plugins
+      - ./scheduler/entrypoint.sh:/entrypoint.sh
     ports:
-      - "8080:8080" 
+      - "8080:8080"
     command: webserver
+    depends_on:
+      - postgres
+
+  airflow-scheduler:
+    build:
+      context: ./scheduler
+    container_name: airflow-scheduler
+    environment:
+      - LOAD_EX=n
+      - EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=3I-MgvR9Xf8RlHU5E5kQtq_Q5e8N05w-3DUFDDGAtpY=
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW_UID=${AIRFLOW_UID}
+    volumes:
+      - ./scheduler/dags:/opt/airflow/dags
+      - ./scheduler/logs:/opt/airflow/logs
+      - ./scheduler/plugins:/opt/airflow/plugins
+      - ./scheduler/entrypoint.sh:/entrypoint.sh
+    command: scheduler
+    depends_on:
+      - postgres
+      - airflow-webserver
 
   spark:
     build:
@@ -23,3 +63,6 @@ services:
     deploy:
       restart_policy:
         condition: any
+
+volumes:
+  postgres-db-volume:
